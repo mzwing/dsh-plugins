@@ -1,0 +1,38 @@
+{
+  "name": "@mzwing/dsh-plugins",
+  "private": true,
+  "description": "Monorepo for mzwing's DeepSeek Harness plugins",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r --filter './packages/**' run test",
+    "changeset": "changeset",
+    "bump-version": "changeset version",
+    "release": "changeset publish",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "knip": "knip"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "1.0.1",
+    "@changesets/cli": "3.0.3",
+    "@mzwing/oxc-config": "^0.1.6",
+    "@types/node": "catalog:",
+    "knip": "^6.44.0",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005"
+  },
+  "lint-staged": {
+    "*.{cjs,cjsx,cts,ctsx,js,jsx,mjs,mjsx,mts,mtsx,ts,tsx,vue}": [
+      "oxfmt --write",
+      "oxlint --fix"
+    ],
+    "*.{css,graphql,gql,html,json,json5,jsonc,less,md,mdx,scss,svelte,toml,yaml,yml}": "oxfmt --write"
+  },
+  "packageManager": "pnpm@12.16.1"
+}

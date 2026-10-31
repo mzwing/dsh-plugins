@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "模型信息",
+    "description": "从 pi.dev 与 models.dev 目录补全第三方模型的上下文窗口、输入模态与推理强度。"
+  }
+}

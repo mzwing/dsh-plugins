@@ -1,0 +1,22 @@
+- id: model-info
+  config:
+    providers:
+      my-relay:
+        catalogProvider: openrouter
+        contextWindowPolicy: min
+        models:
+          gpt-special:
+            alias: openai/gpt-5.6-sol
+          house-model:
+            skip: true
+          fast-model:
+            override:
+              reasoningEfforts:
+                off:
+                high: high
+    rules:
+      - id: thinking
+        kind: suffix
+        value: -thinking
+        override:
+          contextWindow: 250000

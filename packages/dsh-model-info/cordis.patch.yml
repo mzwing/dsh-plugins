@@ -1,0 +1,3 @@
+- insert:
+    - id: model-info
+      name: '@mzwing/dsh-model-info'
