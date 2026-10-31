@@ -1,5 +1,11 @@
 # @mzwing/dsh-model-info
 
+## 0.1.1
+
+### Patch Changes
+
+- [`ab290ce`](https://github.com/mzwing/dsh-plugins/commit/ab290ceb73490c59b43e2838b9f1bbad4aaab43c) Thanks [@mzwing](https://github.com/mzwing)! - chore(dsh-model-info): update a patch version to setup npm trusted publisher connection
+
 ## 0.1.0
 
 ### Minor Changes
