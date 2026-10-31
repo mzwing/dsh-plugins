@@ -1,21 +1,14 @@
-import type {
-  AffixRule,
-  CatalogEntry,
-  CatalogIndex,
-  CatalogMetadata,
-  ModelFields,
-  NormalizedSource,
-  ResolvedConfig,
-  ResolvedProvider,
-  SourceId,
-} from '../src/types.js'
+import type { CatalogIndex } from '../src/catalog/catalog-index.js'
+import type { CatalogEntry, CatalogMetadata, NormalizedSource, SourceId } from '../src/catalog/sources.js'
+import type { AffixRule, ResolvedConfig, ResolvedProvider } from '../src/config.js'
+import type { ModelFields } from '../src/model-fields.js'
 import type { Mock } from 'vitest'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, vi } from 'vitest'
-import { buildCatalogIndex } from '../src/catalog-index.js'
-import { bareId, vendorOf } from '../src/catalog-sources.js'
+import { buildCatalogIndex } from '../src/catalog/catalog-index.js'
+import { bareId, vendorOf } from '../src/catalog/sources.js'
 
 /** A throwaway DSH home, with `DSH_HOME` pointed at it. */
 export function useDshHome(): { home: string } {

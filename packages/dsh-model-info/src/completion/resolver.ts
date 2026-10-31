@@ -1,14 +1,8 @@
-import type {
-  AffixRule,
-  CatalogEntry,
-  CatalogIndex,
-  MatchKind,
-  Resolution,
-  ResolvedMatch,
-  ResolvedProvider,
-} from './types.js'
-import { scopedKey } from './catalog-index.js'
-import { bareId, vendorOf } from './catalog-sources.js'
+import type { CatalogIndex } from '../catalog/catalog-index.js'
+import type { CatalogEntry } from '../catalog/sources.js'
+import type { AffixRule, ResolvedProvider } from '../config.js'
+import { scopedKey } from '../catalog/catalog-index.js'
+import { bareId, vendorOf } from '../catalog/sources.js'
 
 export interface ResolveInput {
   index: CatalogIndex
@@ -18,9 +12,25 @@ export interface ResolveInput {
   modelId: string
 }
 
-interface Hit {
+type MatchKind = 'alias' | 'exact' | 'vendor-qualified' | 'stripped'
+
+export interface ResolvedMatch {
+  kind: 'resolved'
   entry: CatalogEntry
   /** Same-provider pi.dev entry, for the thinking levels the winner cannot express. */
+  donor: CatalogEntry | undefined
+  matchKind: MatchKind
+  prefixRule: AffixRule | undefined
+  suffixRule: AffixRule | undefined
+}
+
+export type Resolution =
+  | ResolvedMatch
+  | { kind: 'ambiguous'; candidates: CatalogEntry[] }
+  | { kind: 'unresolved'; reason: 'no-match' | 'alias-miss' | 'rules-disabled' | 'skipped' }
+
+interface Hit {
+  entry: CatalogEntry
   donor: CatalogEntry | undefined
   viaVendorSplit: boolean
 }

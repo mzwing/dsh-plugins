@@ -1,14 +1,8 @@
-import type {
-  Modality,
-  ModelFields,
-  ReasoningEfforts,
-  Resolution,
-  ResolvedMatch,
-  ResolvedProvider,
-  ThinkingLevelMap,
-} from './types.js'
-import { thinkingLevels } from './types.js'
-import { compact } from './util.js'
+import type { ResolvedProvider } from '../config.js'
+import type { Modality, ModelFields, ReasoningEfforts, ThinkingLevelMap } from '../model-fields.js'
+import type { Resolution, ResolvedMatch } from './resolver.js'
+import { thinkingLevels } from '../model-fields.js'
+import { compact } from '../util.js'
 
 /** One `models` entry of an llm-pi-ai route, carrying whatever else the user wrote beside the fields completed here. */
 export type ModelEntry = ModelFields & { id: string }

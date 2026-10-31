@@ -1,9 +1,11 @@
-import type { CatalogSnapshot } from './catalog.js'
+import type { CatalogSnapshot } from '../catalog/store.js'
+import type { ResolvedConfig } from '../config.js'
+import type { Modality } from '../model-fields.js'
 import type { ModelEntry, RouteDefaults } from './merge.js'
-import type { Modality, Resolution, ResolvedConfig } from './types.js'
+import type { Resolution } from './resolver.js'
+import { isRecord } from '../util.js'
 import { mergeModel } from './merge.js'
 import { resolveModel } from './resolver.js'
-import { isRecord } from './util.js'
 
 interface ModelReport {
   id: string

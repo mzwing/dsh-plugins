@@ -1,7 +1,9 @@
-import type { AffixRule, CatalogIndex, ModelGate, Resolution, ResolvedProvider } from '../src/types.js'
+import type { CatalogIndex } from '../../src/catalog/catalog-index.js'
+import type { Resolution } from '../../src/completion/resolver.js'
+import type { AffixRule, ModelGate, ResolvedProvider } from '../../src/config.js'
 import { describe, expect, it } from 'vitest'
-import { resolveModel } from '../src/resolver.js'
-import { makeIndex, makeProvider, prefixRule, suffixRule } from './helpers.js'
+import { resolveModel } from '../../src/completion/resolver.js'
+import { makeIndex, makeProvider, prefixRule, suffixRule } from '../helpers.js'
 
 const freeDash = suffixRule('free-dash', '-free')
 const freeColon = suffixRule('free-colon', ':free')

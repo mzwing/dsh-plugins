@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeModelsDev, normalizePiDev } from '../src/catalog-sources.js'
+import { normalizeModelsDev, normalizePiDev } from '../../src/catalog/sources.js'
 
 function modelsDev(fields: Record<string, unknown>) {
   return normalizeModelsDev({ 'openai/gpt-5.5': { id: 'openai/gpt-5.5', limit: { context: 1 }, ...fields } }).entries[0]

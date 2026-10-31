@@ -1,5 +1,17 @@
-import type { CatalogEntry, CatalogIndex, NormalizedSource } from './types.js'
-import { bareId } from './catalog-sources.js'
+import type { CatalogEntry, NormalizedSource } from './sources.js'
+import { bareId } from './sources.js'
+
+/** Every bucket is in source-priority order. */
+export interface CatalogIndex {
+  /** Provider + NUL + lowercased id. */
+  scoped: Map<string, CatalogEntry[]>
+  /** Lowercased verbatim id. */
+  exact: Map<string, CatalogEntry[]>
+  /** Lowercased vendor-stripped id. */
+  bare: Map<string, CatalogEntry[]>
+  /** Lowercased bare id → vendor, the last tie-break. */
+  vendors: Map<string, string>
+}
 
 /** NUL cannot appear in a provider or model id, so the composite key is unambiguous. */
 const scopeSeparator = String.fromCharCode(0)

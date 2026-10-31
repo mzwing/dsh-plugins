@@ -1,9 +1,10 @@
-import type { AffixRule, ModelGate, ResolvedConfig, ResolvedProvider } from './types.js'
+import type { SourceId } from './catalog/sources.js'
+import type { ModelFields } from './model-fields.js'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import * as valibot from 'valibot'
-import { thinkingLevels } from './types.js'
+import { thinkingLevels } from './model-fields.js'
 
 /** Suffix variants every relay uses; each can be disabled with `enabled: false`. */
 const builtinRules: AffixRule[] = [
@@ -101,6 +102,49 @@ const fileSchema = valibot.strictObject({
     }),
   ),
 })
+
+export interface AffixRule {
+  /** Referenced by per-model gating. */
+  id: string
+  kind: 'prefix' | 'suffix'
+  /** The literal affix, separator included: `-free`, `:free`. */
+  value: string
+  enabled?: boolean | undefined
+  /** Applied only when this rule was actually used for the match. */
+  override?: ModelFields | undefined
+}
+
+export interface ModelGate {
+  /** Unset means every rule, `[]` none, `['id']` only those. */
+  prefixes?: string[] | undefined
+  suffixes?: string[] | undefined
+  /** `provider/model` or a bare id, tried before anything else. */
+  alias?: string | undefined
+  override?: ModelFields | undefined
+  skip?: boolean | undefined
+}
+
+export interface ResolvedProvider {
+  id: string
+  catalogProvider: string | undefined
+  contextWindowPolicy: 'catalog' | 'min' | 'keep'
+  capabilityPolicy: 'catalog' | 'widen' | 'keep'
+  useCatalogName: boolean
+  mapThinkingLevels: boolean
+  models: Map<string, ModelGate>
+}
+
+/** The config with its defaults materialised and rules ordered. */
+export interface ResolvedConfig {
+  providers: Map<string, ResolvedProvider>
+  /** Longest `value` first, then config order, built-ins last. */
+  prefixRules: AffixRule[]
+  suffixRules: AffixRule[]
+  /** In priority order. */
+  sources: SourceId[]
+  network: { enabled: boolean; timeoutMs: number; maxBytes: number }
+  cache: { ttlMs: number; dir: string }
+}
 
 export interface LoadedConfig {
   config: ResolvedConfig

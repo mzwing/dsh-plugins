@@ -1,7 +1,7 @@
-import type { CatalogSnapshot } from './catalog.js'
-import type { ProviderReport } from './completion.js'
-import type { ModelEntry } from './merge.js'
-import type { Resolution } from './types.js'
+import type { CatalogSnapshot } from '../catalog/store.js'
+import type { ProviderReport } from '../completion/completion.js'
+import type { ModelEntry } from '../completion/merge.js'
+import type { Resolution } from '../completion/resolver.js'
 
 export const commandName = 'model-info'
 

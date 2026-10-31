@@ -1,9 +1,11 @@
-import type { ModelEntry, RouteDefaults } from '../src/merge.js'
-import type { CatalogEntry, ModelFields, ModelGate, ResolvedProvider } from '../src/types.js'
-import type { EntrySpec } from './helpers.js'
+import type { CatalogEntry } from '../../src/catalog/sources.js'
+import type { ModelEntry, RouteDefaults } from '../../src/completion/merge.js'
+import type { ModelGate, ResolvedProvider } from '../../src/config.js'
+import type { ModelFields } from '../../src/model-fields.js'
+import type { EntrySpec } from '../helpers.js'
 import { describe, expect, it } from 'vitest'
-import { mergeModel } from '../src/merge.js'
-import { entry, makeProvider, suffixRule } from './helpers.js'
+import { mergeModel } from '../../src/completion/merge.js'
+import { entry, makeProvider, suffixRule } from '../helpers.js'
 
 const catalogMetadata = {
   name: 'GPT-5.5',

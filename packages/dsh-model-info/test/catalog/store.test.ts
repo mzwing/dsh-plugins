@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CatalogStore } from '../src/catalog.js'
-import { json, makeConfig, stubFetch, useDshHome, writeFile } from './helpers.js'
+import { CatalogStore } from '../../src/catalog/store.js'
+import { json, makeConfig, stubFetch, useDshHome, writeFile } from '../helpers.js'
 
 const piDevPayload = { openai: { 'gpt-5.5': { id: 'gpt-5.5', contextWindow: 400_000 } } }
 const tenDaysLater = 1_000_000 + 10 * 24 * 60 * 60 * 1000

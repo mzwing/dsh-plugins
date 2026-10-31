@@ -1,9 +1,11 @@
-import type { CatalogEntry, CatalogIndex, NormalizedSource, ResolvedConfig, SourceId } from './types.js'
+import type { ResolvedConfig } from '../config.js'
+import type { CatalogIndex } from './catalog-index.js'
+import type { CatalogEntry, NormalizedSource, SourceId } from './sources.js'
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { describeError } from '../util.js'
 import { buildCatalogIndex } from './catalog-index.js'
-import { normalizeModelsDev, normalizePiDev } from './catalog-sources.js'
-import { describeError } from './util.js'
+import { normalizeModelsDev, normalizePiDev } from './sources.js'
 
 const cacheVersion = 1
 

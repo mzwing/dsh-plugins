@@ -1,4 +1,4 @@
-import type { DshCommandDefinition, DshContext, DshFiber } from '../src/dsh.js'
+import type { DshCommandDefinition, DshContext, DshFiber } from '../src/dsh/runtime.js'
 import { join } from 'node:path'
 import * as valibot from 'valibot'
 import { afterEach, describe, expect, it, vi } from 'vitest'

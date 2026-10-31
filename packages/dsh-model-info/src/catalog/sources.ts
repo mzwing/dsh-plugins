@@ -1,6 +1,35 @@
-import type { CatalogEntry, CatalogMetadata, Modality, NormalizedSource, ThinkingLevelMap } from './types.js'
-import { thinkingLevels } from './types.js'
-import { compact, isRecord } from './util.js'
+import type { Modality, ThinkingLevelMap } from '../model-fields.js'
+import { thinkingLevels } from '../model-fields.js'
+import { compact, isRecord } from '../util.js'
+
+/** What a catalog entry knows about a model, never an identity field. */
+export interface CatalogMetadata {
+  name?: string | undefined
+  reasoning?: boolean | undefined
+  input?: Modality[] | undefined
+  contextWindow?: number | undefined
+  thinkingLevelMap?: ThinkingLevelMap | undefined
+}
+
+export type SourceId = 'pi.dev' | 'models.dev'
+
+export interface CatalogEntry {
+  source: SourceId
+  /** Provider id within the source catalog, when the source is provider-scoped. */
+  sourceProvider: string | undefined
+  /** The id verbatim as the source spells it. */
+  sourceId: string
+  /** `vendor/model` identity when the source exposes one. */
+  canonicalId: string
+  metadata: CatalogMetadata
+}
+
+export interface NormalizedSource {
+  source: SourceId
+  entries: CatalogEntry[]
+  /** Bare id → vendor, from `vendor/model` keys. Only models.dev populates this. */
+  vendors: Map<string, string>
+}
 
 /** Remote JSON delivers `__proto__` and friends as ordinary own keys, which have no business in an index. */
 const forbiddenKeys = new Set(['__proto__', 'constructor', 'prototype'])

@@ -1,7 +1,7 @@
-import type { CatalogSnapshot } from '../src/catalog.js'
+import type { CatalogSnapshot } from '../../src/catalog/store.js'
 import { expect, it } from 'vitest'
-import { completeConfig } from '../src/completion.js'
-import { makeConfig, makeIndex, makeProvider } from './helpers.js'
+import { completeConfig } from '../../src/completion/completion.js'
+import { makeConfig, makeIndex, makeProvider } from '../helpers.js'
 
 const catalog: CatalogSnapshot = {
   index: makeIndex([{ id: 'anthropic/claude-opus-5-5', contextWindow: 1_000_000, input: ['text', 'image'] }]),

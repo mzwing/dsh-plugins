@@ -1,9 +1,9 @@
-import type { ProviderReport } from '../src/completion.js'
-import type { Resolution } from '../src/types.js'
+import type { ProviderReport } from '../../src/completion/completion.js'
+import type { Resolution } from '../../src/completion/resolver.js'
 import { expect, it } from 'vitest'
-import { formatDetail, formatSummary } from '../src/command.js'
-import { mergeModel } from '../src/merge.js'
-import { entry, makeProvider } from './helpers.js'
+import { mergeModel } from '../../src/completion/merge.js'
+import { formatDetail, formatSummary } from '../../src/dsh/command.js'
+import { entry, makeProvider } from '../helpers.js'
 
 function report(id: string, resolution: Resolution): ProviderReport[] {
   const { entry: completed, provenance } = mergeModel({
