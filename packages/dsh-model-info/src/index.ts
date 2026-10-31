@@ -2,9 +2,12 @@ import type { CatalogSnapshot } from './catalog/store.js'
 import type { ProviderReport } from './completion/completion.js'
 import type { LoadedConfig } from './config.js'
 import type { DshContext, DshFiber, DshLoaderEntry } from './dsh/runtime.js'
+import type { ListingRequest } from './listing/store.js'
 import { CatalogStore } from './catalog/store.js'
 import { completeConfig } from './completion/completion.js'
+import { expandModels, listingRequestsOf } from './completion/expansion.js'
 import { commandName, formatDetail, formatSummary } from './dsh/command.js'
+import { ListingStore } from './listing/store.js'
 import { describeError } from './util.js'
 
 export { Config } from './config.js'
@@ -18,11 +21,15 @@ const llmPiAiName = 'llm-pi-ai'
 /** A refresh inside the cache ttl reads the disk only, so this just bounds how late an expired catalog is noticed. */
 const refreshIntervalMs = 60 * 60 * 1000
 
+/** Under the refresh interval, so every refresh lists the endpoints again while a burst of triggers lists them once. */
+const listingMaxAgeMs = refreshIntervalMs / 2
+
 export function apply(ctx: DshContext, { config, issues }: LoadedConfig): void {
   for (const issue of issues) {
     ctx.logger.warn('config issue: %s', issue)
   }
   const store = new CatalogStore()
+  const listings = new ListingStore()
   const controller = new AbortController()
   let catalog: CatalogSnapshot | undefined
 
@@ -40,8 +47,29 @@ export function apply(ctx: DshContext, { config, issues }: LoadedConfig): void {
     recommitLlmPiAi()
   }
 
+  const expand = (raw: unknown): unknown => expandModels(raw, config, endpoint => listings.ids(endpoint))
+
+  const listingRequests = (): ListingRequest[] =>
+    llmPiAiEntries().flatMap(entry => listingRequestsOf(entry.options.id, entry.options.config, config))
+
+  const refreshListings = async (maxAgeMs: number): Promise<void> => {
+    const llm = ctx.get('llm')
+    if (llm !== undefined) {
+      await listings.refresh(
+        config,
+        listingRequests(),
+        async ({ settingsNs, ...endpoint }, signal) => llm.discoverModels(settingsNs, endpoint, signal),
+        controller.signal,
+        maxAgeMs,
+      )
+    }
+  }
+
   const refresh = async (force = false): Promise<void> => {
-    const snapshot = await store.refresh(config, controller.signal, force)
+    const [snapshot] = await Promise.all([
+      store.refresh(config, controller.signal, force),
+      refreshListings(force ? 0 : listingMaxAgeMs),
+    ])
     if (!controller.signal.aborted) {
       applyCatalog(snapshot)
     }
@@ -52,7 +80,9 @@ export function apply(ctx: DshContext, { config, issues }: LoadedConfig): void {
     if (snapshot?.status !== 'ready') {
       return [...config.providers.keys()].map(provider => ({ provider, skipReason: 'no catalog loaded', models: [] }))
     }
-    const found = llmPiAiEntries().flatMap(entry => completeConfig(entry.options.config, snapshot, config).reports)
+    const found = llmPiAiEntries().flatMap(
+      entry => completeConfig(expand(entry.options.config), snapshot, config).reports,
+    )
     const missing = [...config.providers.keys()]
       .filter(provider => !found.some(report => report.provider === provider))
       .map(provider => ({ provider, skipReason: 'no llm-pi-ai route has this name', models: [] }))
@@ -63,7 +93,7 @@ export function apply(ctx: DshContext, { config, issues }: LoadedConfig): void {
   ctx.inject(['commands'], ctx => {
     ctx.commands.register({
       name: commandName,
-      description: 'Inspect the model metadata model-info completed for your llm-pi-ai routes',
+      description: 'Inspect the models model-info listed and completed for your llm-pi-ai routes',
       input: { hint: '[refresh | <route>/<model>]' },
       async handler({ rawInput }) {
         const argument = rawInput.trim()
@@ -75,7 +105,7 @@ export function apply(ctx: DshContext, { config, issues }: LoadedConfig): void {
           kind: 'success',
           text:
             argument === 'refresh' || argument === ''
-              ? formatSummary(reports(), catalog, issues, Date.now())
+              ? formatSummary(reports(), catalog, listings.statuses(listingRequests()), issues, Date.now())
               : formatDetail(reports(), argument),
         }
       },
@@ -90,19 +120,35 @@ export function apply(ctx: DshContext, { config, issues }: LoadedConfig): void {
   ctx.effect(() => recommitLlmPiAi)
   ctx.on('internal/config', function (this: DshFiber, _raw: unknown, next: () => unknown) {
     const raw = next()
+    if (this.runtime?.name !== llmPiAiName) {
+      return raw
+    }
+    const expanded = expand(raw)
 
-    return this.runtime?.name === llmPiAiName && catalog?.status === 'ready'
-      ? completeConfig(raw, catalog, config).config
-      : raw
+    return catalog?.status === 'ready' ? completeConfig(expanded, catalog, config).config : expanded
   })
   ctx.effect(() => () => controller.abort())
 
+  listings.load(config)
   applyCatalog(store.load(config))
-  const refreshInBackground = (): void => {
-    refresh().catch((error: unknown) => {
-      ctx.logger.warn('catalog refresh failed: %s', describeError(error))
+  const inBackground = (task: Promise<void>): void => {
+    task.catch((error: unknown) => {
+      ctx.logger.warn('refresh failed: %s', describeError(error))
     })
   }
+  const refreshInBackground = (): void => {
+    inBackground(refresh())
+  }
+  // llm-pi-ai registers its model discovery right before its routes, so this is when an endpoint can first be listed.
+  ctx.on('llm/adapters-updated', () => {
+    inBackground(
+      refreshListings(listingMaxAgeMs).then(() => {
+        if (!controller.signal.aborted) {
+          recommitLlmPiAi()
+        }
+      }),
+    )
+  })
   refreshInBackground()
   const timer = setInterval(refreshInBackground, refreshIntervalMs)
   timer.unref()

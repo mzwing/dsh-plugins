@@ -5,7 +5,7 @@ export interface DshFiber {
 }
 
 export interface DshLoaderEntry {
-  readonly options: { readonly config?: unknown }
+  readonly options: { readonly id: string; readonly config?: unknown }
   readonly fiber?: DshFiber | undefined
   /**
    * The loader's own commit for a volatile-only edit: it re-resolves the raw config through `internal/config` and
@@ -27,14 +27,26 @@ interface DshCommandsContext {
   readonly commands: { readonly register: (definition: DshCommandDefinition) => () => void }
 }
 
+export interface DshLlm {
+  /** Answers through the discovery an llm adapter registered under `settingsNs`, which for llm-pi-ai is its row id. */
+  readonly discoverModels: (
+    settingsNs: string,
+    request: { readonly provider: string; readonly baseURL?: string | undefined; readonly api?: string | undefined },
+    signal?: AbortSignal,
+  ) => Promise<readonly { readonly id: string }[]>
+}
+
 export interface DshContext {
   readonly logger: { readonly warn: (format: string, ...params: unknown[]) => void }
   readonly loader: { readonly entries: () => Iterable<DshLoaderEntry> }
-  /** Every fiber's config resolution runs through this waterfall, with the fiber as `this`. */
-  readonly on: (
-    name: 'internal/config',
-    listener: (this: DshFiber, config: unknown, next: () => unknown) => unknown,
-  ) => () => void
+  /** `undefined` while the service is not running. */
+  readonly get: (name: 'llm') => DshLlm | undefined
+  readonly on: {
+    /** Every fiber's config resolution runs through this waterfall, with the fiber as `this`. */
+    (name: 'internal/config', listener: (this: DshFiber, config: unknown, next: () => unknown) => unknown): () => void
+    /** Fires whenever an llm adapter registers or changes its routes. */
+    (name: 'llm/adapters-updated', listener: () => void): () => void
+  }
   readonly effect: (execute: () => () => void) => () => void
   readonly inject: (services: string[], callback: (ctx: DshCommandsContext) => void) => unknown
 }

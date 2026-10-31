@@ -43,7 +43,7 @@ it('reads a reference as route/model only when it starts with a route', () => {
   expect(formatDetail(reports, 'other/auto/gpt-5.5')).toContain('No completed model matches')
 })
 
-it('summarises each route and the catalogs behind it', () => {
+it('summarises each route and the catalogs and endpoints behind it', () => {
   const reports = [
     ...report('gpt-5.5', resolved),
     { provider: 'gone', skipReason: 'no llm-pi-ai route has this name', models: [] },
@@ -53,14 +53,22 @@ it('summarises each route and the catalogs behind it', () => {
     status: 'ready' as const,
     sources: [{ source: 'pi.dev' as const, fetchedAt: 0, entryCount: 3, lastError: 'HTTP 503' }],
   }
+  const listings = [
+    { provider: 'relay', modelCount: 1, fetchedAt: 0, lastError: undefined },
+    { provider: 'down', modelCount: 0, fetchedAt: undefined, lastError: 'could not reach http://down/v1/models' },
+  ]
 
-  expect(formatSummary(reports, catalog, ['providers.x: bad'], 2 * 60 * 60_000)).toBe(
+  expect(formatSummary(reports, catalog, listings, ['providers.x: bad'], 2 * 60 * 60_000)).toBe(
     [
       'relay: 1 completed, 0 ambiguous, 0 unresolved (1 models)',
       'gone: skipped — no llm-pi-ai route has this name',
       '',
       'catalogs:',
       '  pi.dev: 3 entries, 2h ago — HTTP 503',
+      '',
+      'endpoints:',
+      '  relay: 1 models, 2h ago',
+      '  down: 0 models, never fetched — could not reach http://down/v1/models',
       '',
       'config issues:',
       '  providers.x: bad',

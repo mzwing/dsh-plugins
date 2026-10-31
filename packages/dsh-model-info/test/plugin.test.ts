@@ -1,4 +1,4 @@
-import type { DshCommandDefinition, DshContext, DshFiber } from '../src/dsh/runtime.js'
+import type { DshCommandDefinition, DshContext, DshFiber, DshLlm } from '../src/dsh/runtime.js'
 import { join } from 'node:path'
 import * as valibot from 'valibot'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -30,7 +30,7 @@ type ConfigHook = (this: DshFiber, config: unknown, next: () => unknown) => unkn
 function createEntry(hooks: ConfigHook[], name: string, config: unknown) {
   const fiber: DshFiber = { runtime: { name } }
   const entry = {
-    options: { config },
+    options: { id: name, config },
     fiber,
     committed: undefined as unknown,
     _commitVolatile() {
@@ -67,20 +67,28 @@ describe('model info plugin', () => {
   function setup(
     config: unknown = { providers: { magpie: {} } },
     fetch: () => Response | Promise<Response> = () => json(piDevPayload),
+    routes: unknown = llmPiAiConfig,
   ) {
     const hooks: ConfigHook[] = []
+    const adaptersUpdated: (() => void)[] = []
     const disposers: (() => void)[] = []
     const commands = new Map<string, DshCommandDefinition>()
-    const llmPiAi = createEntry(hooks, 'llm-pi-ai', llmPiAiConfig)
-    const other = createEntry(hooks, 'other', llmPiAiConfig)
+    const llmPiAi = createEntry(hooks, 'llm-pi-ai', routes)
+    const other = createEntry(hooks, 'other', routes)
     const fetchMock = stubFetch(async url => (url.includes('pi.dev') ? fetch() : json({})))
+    // Until llm-pi-ai mounts, the llm service has no discovery registered under its row id.
+    const discoverModels = vi.fn<DshLlm['discoverModels']>(async settingsNs => {
+      throw new Error(`no model discovery is registered for "${settingsNs}"`)
+    })
     const ctx: DshContext = {
       logger: { warn: () => {} },
       loader: { entries: () => [llmPiAi, other] },
-      on(_name, listener) {
-        hooks.push(listener)
+      get: () => ({ discoverModels }),
+      on(name: 'internal/config' | 'llm/adapters-updated', listener: ConfigHook | (() => void)) {
+        const listeners: (ConfigHook | (() => void))[] = name === 'internal/config' ? hooks : adaptersUpdated
+        listeners.push(listener)
         const dispose = (): void => {
-          hooks.splice(hooks.indexOf(listener), 1)
+          listeners.splice(listeners.indexOf(listener), 1)
         }
         disposers.push(dispose)
 
@@ -108,6 +116,12 @@ describe('model info plugin', () => {
 
     return {
       fetch: fetchMock,
+      discoverModels,
+      emitAdaptersUpdated: () => {
+        for (const listener of adaptersUpdated) {
+          listener()
+        }
+      },
       llmPiAi,
       other,
       dispose: () => {
@@ -200,6 +214,31 @@ describe('model info plugin', () => {
     await settle()
 
     expect(harness.llmPiAi.committed).toBe(llmPiAiConfig)
+  })
+
+  it('expands a pattern entry from the endpoint once llm-pi-ai registers its discovery', async () => {
+    const routes = {
+      providers: {
+        relay: { api: 'openai-completions', baseURL: 'http://relay/v1', models: [{ id: 'auto/*' }] },
+      },
+    }
+    const harness = setup({ providers: { relay: {} } }, undefined, routes)
+    await settle()
+    expect(harness.llmPiAi.committed).toMatchObject({ providers: { relay: { models: [{ id: 'auto/*' }] } } })
+
+    harness.discoverModels.mockResolvedValue([{ id: 'auto/claude-opus-5-5' }, { id: 'other/model' }])
+    harness.emitAdaptersUpdated()
+    await settle()
+
+    expect(harness.discoverModels).toHaveBeenLastCalledWith(
+      'llm-pi-ai',
+      { provider: 'relay', baseURL: 'http://relay/v1', api: 'openai-completions' },
+      expect.any(AbortSignal),
+    )
+    expect(harness.llmPiAi.committed).toMatchObject({
+      providers: { relay: { models: [{ id: 'auto/claude-opus-5-5', contextWindow: 1_000_000 }] } },
+    })
+    expect(await harness.run()).toContain('endpoints:\n  relay: 2 models, 0m ago')
   })
 
   it('summarises, explains one model, and refreshes on command', async () => {

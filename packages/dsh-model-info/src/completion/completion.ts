@@ -4,7 +4,7 @@ import type { Modality } from '../model-fields.js'
 import type { ModelEntry, RouteDefaults } from './merge.js'
 import type { Resolution } from './resolver.js'
 import { isRecord } from '../util.js'
-import { mergeModel } from './merge.js'
+import { isModelEntry, mergeModel } from './merge.js'
 import { resolveModel } from './resolver.js'
 
 interface ModelReport {
@@ -24,10 +24,6 @@ export interface ProviderReport {
 export interface Completion {
   config: unknown
   reports: ProviderReport[]
-}
-
-function isModelEntry(value: unknown): value is ModelEntry {
-  return isRecord(value) && typeof value['id'] === 'string'
 }
 
 function routeDefaults(route: Record<string, unknown>): RouteDefaults {

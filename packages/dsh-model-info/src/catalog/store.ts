@@ -1,8 +1,8 @@
 import type { ResolvedConfig } from '../config.js'
 import type { CatalogIndex } from './catalog-index.js'
 import type { CatalogEntry, NormalizedSource, SourceId } from './sources.js'
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
+import { readCacheFile, writeCacheFile } from '../cache-file.js'
 import { describeError } from '../util.js'
 import { buildCatalogIndex } from './catalog-index.js'
 import { normalizeModelsDev, normalizePiDev } from './sources.js'
@@ -46,12 +46,7 @@ function cachePath(config: ResolvedConfig, source: SourceId): string {
 
 /** A corrupt or foreign envelope reads as absent and stays on disk until the next successful fetch replaces it. */
 function readCache(config: ResolvedConfig, source: SourceId): CachedEnvelope | undefined {
-  let envelope: Partial<CachedEnvelope> | null
-  try {
-    envelope = JSON.parse(readFileSync(cachePath(config, source), 'utf8')) as Partial<CachedEnvelope> | null
-  } catch {
-    return undefined
-  }
+  const envelope = readCacheFile(cachePath(config, source)) as Partial<CachedEnvelope> | null | undefined
   const usable =
     envelope?.version === cacheVersion &&
     envelope.source === source &&
@@ -61,23 +56,6 @@ function readCache(config: ResolvedConfig, source: SourceId): CachedEnvelope | u
     envelope.entries.length === envelope.entryCount
 
   return usable ? (envelope as CachedEnvelope) : undefined
-}
-
-function writeCache(config: ResolvedConfig, envelope: CachedEnvelope): void {
-  const path = cachePath(config, envelope.source)
-  const temporary = `${path}.tmp`
-  try {
-    mkdirSync(dirname(path), { recursive: true })
-    writeFileSync(temporary, `${JSON.stringify(envelope)}\n`, 'utf8')
-    renameSync(temporary, path)
-  } catch (error) {
-    try {
-      rmSync(temporary, { force: true })
-    } catch {
-      // The write error is the actionable one.
-    }
-    throw error
-  }
 }
 
 /** Reads through the stream, so an oversized payload is abandoned rather than buffered whole. */
@@ -209,7 +187,7 @@ export class CatalogStore {
 
     this.errors.delete(source)
     try {
-      writeCache(config, envelope)
+      writeCacheFile(cachePath(config, source), envelope)
     } catch (error) {
       // A cache that cannot be written is a slower plugin, not a broken one.
       this.errors.set(source, `cache write failed: ${describeError(error)}`)

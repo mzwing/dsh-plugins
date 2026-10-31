@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import * as valibot from 'valibot'
+import { compileIdPattern, isIdPattern } from './id-pattern.js'
 import { thinkingLevels } from './model-fields.js'
 
 /** Suffix variants every relay uses; each can be disabled with `enabled: false`. */
@@ -124,6 +125,11 @@ export interface ModelGate {
   skip?: boolean | undefined
 }
 
+/** A model's gate is the one keyed by its exact id, else the one under the longest pattern key it matches. */
+interface ModelGates {
+  readonly get: (modelId: string) => ModelGate | undefined
+}
+
 export interface ResolvedProvider {
   id: string
   catalogProvider: string | undefined
@@ -131,7 +137,7 @@ export interface ResolvedProvider {
   capabilityPolicy: 'catalog' | 'widen' | 'keep'
   useCatalogName: boolean
   mapThinkingLevels: boolean
-  models: Map<string, ModelGate>
+  models: ModelGates
 }
 
 /** The config with its defaults materialised and rules ordered. */
@@ -157,6 +163,16 @@ function orderRules(rules: AffixRule[]): AffixRule[] {
     .map((rule, ordinal) => ({ rule, ordinal }))
     .sort((left, right) => right.rule.value.length - left.rule.value.length || left.ordinal - right.ordinal)
     .map(entry => entry.rule)
+}
+
+/** Like the affix rules, overlapping patterns rank longest first rather than by key order; ties keep config order. */
+function modelGates(gates: Map<string, ModelGate>): ModelGates {
+  const patterns = [...gates]
+    .filter(([key]) => isIdPattern(key))
+    .sort(([left], [right]) => right.length - left.length)
+    .map(([key, gate]) => ({ matcher: compileIdPattern(key), gate }))
+
+  return { get: modelId => gates.get(modelId) ?? patterns.find(({ matcher }) => matcher.test(modelId))?.gate }
 }
 
 function resolve(file: valibot.InferOutput<typeof fileSchema>): LoadedConfig {
@@ -190,7 +206,7 @@ function resolve(file: valibot.InferOutput<typeof fileSchema>): LoadedConfig {
       capabilityPolicy: optIn.capabilityPolicy ?? 'catalog',
       useCatalogName: optIn.useCatalogName ?? false,
       mapThinkingLevels: optIn.mapThinkingLevels ?? false,
-      models,
+      models: modelGates(models),
     })
   }
 

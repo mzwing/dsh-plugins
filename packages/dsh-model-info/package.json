@@ -1,7 +1,7 @@
 {
   "name": "@mzwing/dsh-model-info",
   "version": "0.1.1",
-  "description": "Completes third-party model metadata in DeepSeek Harness from the pi.dev and models.dev catalogs",
+  "description": "Lists third-party models in DeepSeek Harness from their endpoints and completes their metadata from the pi.dev and models.dev catalogs",
   "keywords": [
     "context-window",
     "deepseek-harness",

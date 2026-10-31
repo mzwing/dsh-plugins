@@ -2,10 +2,14 @@ import type { ResolvedProvider } from '../config.js'
 import type { Modality, ModelFields, ReasoningEfforts, ThinkingLevelMap } from '../model-fields.js'
 import type { Resolution, ResolvedMatch } from './resolver.js'
 import { thinkingLevels } from '../model-fields.js'
-import { compact } from '../util.js'
+import { compact, isRecord } from '../util.js'
 
 /** One `models` entry of an llm-pi-ai route, carrying whatever else the user wrote beside the fields completed here. */
 export type ModelEntry = ModelFields & { id: string }
+
+export function isModelEntry(value: unknown): value is ModelEntry {
+  return isRecord(value) && typeof value['id'] === 'string'
+}
 
 /** The route fallbacks llm-pi-ai applies to a model whose entry sets none. */
 export interface RouteDefaults {

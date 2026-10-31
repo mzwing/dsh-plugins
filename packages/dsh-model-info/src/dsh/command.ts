@@ -2,6 +2,7 @@ import type { CatalogSnapshot } from '../catalog/store.js'
 import type { ProviderReport } from '../completion/completion.js'
 import type { ModelEntry } from '../completion/merge.js'
 import type { Resolution } from '../completion/resolver.js'
+import type { ListingStatus } from '../listing/store.js'
 
 export const commandName = 'model-info'
 
@@ -17,6 +18,7 @@ function age(now: number, fetchedAt: number | undefined): string {
 export function formatSummary(
   reports: ProviderReport[],
   catalog: CatalogSnapshot | undefined,
+  listings: ListingStatus[],
   issues: string[],
   now: number,
 ): string {
@@ -47,6 +49,14 @@ export function formatSummary(
     for (const source of catalog.sources) {
       const error = source.lastError === undefined ? '' : ` — ${source.lastError}`
       lines.push(`  ${source.source}: ${source.entryCount} entries, ${age(now, source.fetchedAt)}${error}`)
+    }
+  }
+
+  if (listings.length > 0) {
+    lines.push('', 'endpoints:')
+    for (const listing of listings) {
+      const error = listing.lastError === undefined ? '' : ` — ${listing.lastError}`
+      lines.push(`  ${listing.provider}: ${listing.modelCount} models, ${age(now, listing.fetchedAt)}${error}`)
     }
   }
 

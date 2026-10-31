@@ -24,6 +24,20 @@ describe('config', () => {
     expect(config.providers.get('relay')?.models.get('m')?.suffixes).toEqual(['free-dash'])
   })
 
+  it('gates a model by its exact id first, then by the longest pattern key it matches', () => {
+    const { config } = valibot.parse(Config, {
+      providers: {
+        relay: { models: { '*/x': { alias: 'short' }, 'remote/*': { alias: 'long' }, 'auto/x': { skip: true } } },
+      },
+    })
+    const gates = config.providers.get('relay')!.models
+
+    expect(gates.get('auto/x')).toEqual({ skip: true })
+    expect(gates.get('remote/auto/x')?.alias).toBe('long')
+    expect(gates.get('other/x')?.alias).toBe('short')
+    expect(gates.get('other/y')).toBeUndefined()
+  })
+
   it('orders rules longest value first, so a broad suffix cannot shadow a specific one', () => {
     const { config } = valibot.parse(Config, { rules: [{ id: 'long', kind: 'suffix', value: '-preview-free' }] })
 
