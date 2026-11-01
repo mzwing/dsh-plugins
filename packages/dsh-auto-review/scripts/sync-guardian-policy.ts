@@ -1,0 +1,142 @@
+// Reports the upstream Codex Guardian commits since the pinned revision; the policy text is always ported by hand
+//
+//   pnpm sync:guardian-policy [--ref <ref>] [--pin]
+//
+// Exits non-zero when upstream moved. Pin only after porting: policyRevision goes into every review log line, so a pin
+// that outruns the text is a false audit record. GITHUB_TOKEN lifts the anonymous rate limit
+import { readFileSync, writeFileSync } from 'node:fs'
+import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+import { parseArgs } from 'node:util'
+import { upstreamDirectory, upstreamFiles, upstreamRepo, upstreamRevision } from '../src/presets/codex/upstream.ts'
+
+interface Commit {
+  sha: string
+  committedAt: string
+  summary: string
+}
+
+interface RawCommit {
+  sha?: string
+  commit?: { committer?: { date?: string }; message?: string }
+}
+
+const manifestPath = fileURLToPath(new URL('../src/presets/codex/upstream.ts', import.meta.url))
+const revisionPattern = /(export const upstreamRevision = ')[\da-f]{40}(')/
+
+const { values } = parseArgs({
+  // pnpm forwards the `--` of `pnpm sync:guardian-policy -- --pin`, after which parseArgs would ignore the flag
+  args: process.argv.slice(2).filter(argument => argument !== '--'),
+  options: {
+    ref: { type: 'string', default: 'main' },
+    pin: { type: 'boolean', default: false },
+  },
+})
+
+const token = process.env['GITHUB_TOKEN'] ?? process.env['GH_TOKEN']
+const headers: Record<string, string> = {
+  accept: 'application/vnd.github+json',
+  ...(token === undefined ? {} : { authorization: `Bearer ${token}` }),
+}
+
+async function api(path: string): Promise<unknown> {
+  const url = `https://api.github.com/repos/${upstreamRepo}/${path}`
+  const response = await fetch(url, { headers })
+  if (!response.ok) {
+    const hint = response.status === 403 && token === undefined ? ' (set GITHUB_TOKEN to raise the rate limit)' : ''
+    throw new Error(`GET ${url} failed: ${response.status} ${response.statusText}${hint}`)
+  }
+
+  return response.json()
+}
+
+function toCommit(raw: RawCommit): Commit | undefined {
+  if (raw.sha === undefined) {
+    return undefined
+  }
+
+  return {
+    sha: raw.sha,
+    committedAt: raw.commit?.committer?.date ?? '',
+    summary: (raw.commit?.message ?? '').split('\n')[0] ?? '',
+  }
+}
+
+function filePath(file: string): string {
+  return `${upstreamDirectory}/${file}`
+}
+
+/** Commits touching `file` at or below `ref`, newest first */
+async function history(file: string, ref: string, since?: string): Promise<Commit[]> {
+  const query = new URLSearchParams({ path: filePath(file), sha: ref, per_page: '20' })
+  if (since !== undefined) {
+    query.set('since', since)
+  }
+  const raw = (await api(`commits?${query.toString()}`)) as RawCommit[]
+
+  return raw.map(toCommit).filter((commit): commit is Commit => commit !== undefined)
+}
+
+const pinned = toCommit((await api(`commits/${upstreamRevision}`)) as RawCommit)
+if (pinned === undefined) {
+  throw new Error(`pinned revision ${upstreamRevision} not found in ${upstreamRepo}`)
+}
+
+const heads = await Promise.all(upstreamFiles.map(async file => ({ file, commits: await history(file, values.ref) })))
+
+// The commits API does not follow renames, so a file with no history moved away rather than stayed unchanged
+const unresolved = heads.filter(head => head.commits.length === 0)
+if (unresolved.length > 0) {
+  throw new Error(
+    `no commits at ${values.ref} for ${unresolved.map(head => filePath(head.file)).join(', ')}` +
+      ` — check upstreamDirectory in src/presets/codex/upstream.ts, or pass a --ref that postdates the move`,
+  )
+}
+
+// The files move independently, so the revision to pin is the newest commit across all of them
+const newest = heads
+  .flatMap(head => head.commits.slice(0, 1))
+  .reduce((left, right) => (right.committedAt > left.committedAt ? right : left))
+
+console.log(`upstream   ${upstreamRepo}/${upstreamDirectory} @ ${values.ref}`)
+console.log(`pinned     ${upstreamRevision}  (${pinned.committedAt})`)
+
+if (newest.sha === upstreamRevision) {
+  console.log(`resolved   ${newest.sha}  (unchanged)\n\nUpstream has not moved. Nothing to port.`)
+  process.exit(0)
+}
+
+console.log(`resolved   ${newest.sha}  (${newest.committedAt})\n`)
+
+// `since` is inclusive, so drop the pinned commit itself from each list
+const landed = await Promise.all(
+  upstreamFiles.map(async file => ({
+    file,
+    commits: (await history(file, values.ref, pinned.committedAt)).filter(commit => commit.sha !== upstreamRevision),
+  })),
+)
+
+for (const { file, commits } of landed) {
+  if (commits.length === 0) {
+    console.log(`${file}: unchanged`)
+    continue
+  }
+  console.log(`${file}: ${commits.length} new commit${commits.length === 1 ? '' : 's'}`)
+  for (const commit of commits) {
+    console.log(`  ${commit.sha.slice(0, 12)}  ${commit.summary}`)
+    console.log(`    https://github.com/${upstreamRepo}/commit/${commit.sha}`)
+  }
+  console.log(`  full history: https://github.com/${upstreamRepo}/commits/${values.ref}/${filePath(file)}`)
+}
+
+if (!values.pin) {
+  console.error(
+    '\nRead the commits above, port what applies into the adapted text in src/presets/codex/policy.ts,' +
+      '\nthen re-run with --pin to record the new revision.',
+  )
+  process.exit(1)
+}
+
+writeFileSync(manifestPath, readFileSync(manifestPath, 'utf8').replace(revisionPattern, `$1${newest.sha}$2`))
+console.log(`\nPinned ${newest.sha} in src/presets/codex/upstream.ts.`)
+console.log('Bump dshAdaptationRevision too if you reworded anything DeepSeek Harness-specific.')

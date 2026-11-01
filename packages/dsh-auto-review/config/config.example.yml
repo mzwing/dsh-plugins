@@ -1,0 +1,20 @@
+- id: auto-reviewer
+  config:
+    preset: codex
+    provider: my-relay
+    model: deepseek-v4.1-flash
+    reasoningEffort: high
+    attemptTimeoutMs: 30000
+    followUpReviews: auto
+    autoMode:
+      soft_deny:
+        - $defaults
+        - Deny any write under /srv/production unless the user names the exact path.
+    exemptTools:
+      - read
+      - read_image
+      - glob
+      - grep
+      - skill
+      - todo_write
+      - ask_user_question

@@ -1,0 +1,7 @@
+# Only one plugin can provide the Auto preset
+- id: auto-review
+  name: '@deepseek-ai/dsh-experimental-auto-review'
+  disabled: true
+- insert:
+    - id: auto-reviewer
+      name: '@mzwing/dsh-auto-review'

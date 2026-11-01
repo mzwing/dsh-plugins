@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "自动审查器",
+    "description": "接管 Auto 自动审查权限模式：由你指定的模型按 Codex Guardian 或 Claude Code auto mode 的方式，在每次工具调用执行前进行审查。"
+  }
+}

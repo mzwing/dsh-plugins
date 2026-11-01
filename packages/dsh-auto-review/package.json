@@ -1,0 +1,83 @@
+{
+  "name": "@mzwing/dsh-auto-review",
+  "version": "0.0.0",
+  "description": "Takes over the Auto review permission mode of DeepSeek Harness with Codex Guardian- or Claude Code-style reviews on a model you choose",
+  "keywords": [
+    "auto-mode",
+    "auto-review",
+    "claude-code",
+    "codex",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "guardian",
+    "permissions"
+  ],
+  "homepage": "https://github.com/mzwing/dsh-plugins/tree/master/packages/dsh-auto-review#readme",
+  "bugs": {
+    "url": "https://github.com/mzwing/dsh-plugins/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "mzwing",
+    "email": "mzwing@mzwing.eu.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mzwing/dsh-plugins.git",
+    "directory": "packages/dsh-auto-review"
+  },
+  "files": [
+    "dist",
+    "locale",
+    "cordis.patch.yml",
+    "config/config.example.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sync:guardian-policy": "node scripts/sync-guardian-policy.ts",
+    "sync:claude-code-policy": "node scripts/sync-claude-code-policy.ts",
+    "prepack": "pnpm run build"
+  },
+  "devDependencies": {
+    "@deepseek-ai/schemastery": "3.18.5",
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "^3.18.5"
+  },
+  "engines": {
+    "dsh": ">=0.2.1-rc.5",
+    "node": ">=24"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

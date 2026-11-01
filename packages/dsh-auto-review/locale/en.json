@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Auto Reviewer",
+    "description": "Takes over the Auto review permission mode: a reviewer on a model you choose checks every tool call before it runs, the way Codex Guardian or Claude Code's auto mode does."
+  }
+}
