@@ -1,5 +1,13 @@
 # @mzwing/dsh-auto-review
 
+## 0.1.2
+
+### Patch Changes
+
+- [`2f3cc8b`](https://github.com/mzwing/dsh-plugins/commit/2f3cc8b84f63fb3cc05e69c59d0581889310c70a) Thanks [@mzwing](https://github.com/mzwing)! - fix(dsh-auto-review): stop warning at every start when the built-in Auto review is off
+  
+  The bundle patch disabled the built-in Auto review's `auto-review` row. That bundle ships switched off, so DSH warned `patch: entry "auto-review" not found` at every start for everyone who never switched it on, and a built-in switched on after this plugin was missed as well, since its row comes later. If you switched the built-in Auto Authorization Review on, switch it off on the Plugins page.
+
 ## 0.1.1
 
 ### Patch Changes
