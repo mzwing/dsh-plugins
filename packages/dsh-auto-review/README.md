@@ -13,7 +13,7 @@ A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin tha
 dsh plugin --profile web add @mzwing/dsh-auto-review
 ```
 
-Only one plugin can provide Auto, so this one turns off the built-in Auto review. Restart DSH after installing.
+Only one plugin can provide Auto, so if you switched on the built-in Auto Authorization Review, switch it off on the Plugins page. Restart DSH after installing.
 
 ## Usage
 
