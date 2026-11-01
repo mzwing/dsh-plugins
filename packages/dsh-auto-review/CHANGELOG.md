@@ -1,5 +1,11 @@
 # @mzwing/dsh-auto-review
 
+## 0.1.1
+
+### Patch Changes
+
+- [`d0d895c`](https://github.com/mzwing/dsh-plugins/commit/d0d895c15c78a6263c0b3435bb4543cd9d43b39a) Thanks [@mzwing](https://github.com/mzwing)! - chore(dsh-auto-review): setup npm trusted publisher connection
+
 ## 0.1.0
 
 ### Minor Changes
