@@ -1,6 +1,6 @@
 {
   "name": "@mzwing/dsh-auto-review",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Takes over the Auto review permission mode of DeepSeek Harness with Codex Guardian- or Claude Code-style reviews on a model you choose",
   "keywords": [
     "auto-mode",
