@@ -39,7 +39,7 @@ Set the reviewer in `~/.dsh/cordis.patch.yml` or the profile's own `cordis.patch
 | `reasoningEffort`   | the model's default | Reasoning effort for the configured route, used by `claude-code` for its second pass |
 | `timeoutMs`         | `90000`             | Total budget for one review, retries included                                        |
 | `attemptTimeoutMs`  | —                   | Time limit for one call; without it, only `timeoutMs` applies                        |
-| `maxRetries`        | `2`                 | Retries when a call fails or its reply is malformed                                  |
+| `maxRetries`        | `2`                 | Retries after a transient failure or a malformed reply                               |
 | `followUpReviews`   | `auto`              | Continue the reviewer's conversation across calls; see below                         |
 | `autoMode`          | —                   | Rules beside or instead of the preset's own; see below                               |
 | `exemptTools`       | read-only tools     | Tools that run unreviewed; a list replaces `defaultExemptTools` whole                |

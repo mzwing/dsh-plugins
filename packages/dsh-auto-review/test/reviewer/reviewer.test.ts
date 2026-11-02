@@ -77,7 +77,7 @@ describe('reviewer', () => {
     expect(harness.stream).not.toHaveBeenCalled()
   })
 
-  it('retries transient failures but not one a retry cannot change', async () => {
+  it('retries transient failures but never a refusal, or another failure a retry cannot change', async () => {
     const transient = createHarness({
       replies: [
         new Error('socket hang up'),
@@ -91,6 +91,11 @@ describe('reviewer', () => {
         allowReply,
       ],
     })
+    // The pi-ai adapter reports a refusal under its catch-all code
+    const refusal = 'claude-sonnet-5-5 refused this request (safety filter: content_filter)'
+    const refused = createHarness({
+      replies: [{ finish: { kind: 'error', failure: { code: 'PI_AI_ERROR', message: refusal } } }, allowReply],
+    })
 
     expect(await transient.review()).toMatchObject({ kind: 'allow', usage: { attempts: 3 } })
     expect(await permanent.review()).toMatchObject({
@@ -99,6 +104,12 @@ describe('reviewer', () => {
       detail: 'UNKNOWN_MODEL: no such model',
     })
     expect(permanent.stream).toHaveBeenCalledOnce()
+    expect(await refused.review()).toMatchObject({
+      kind: 'failed',
+      category: 'provider-error',
+      detail: `PI_AI_ERROR: ${refusal}`,
+    })
+    expect(refused.stream).toHaveBeenCalledOnce()
   })
 
   it('retries a malformed reply, and fails with invalid-response once every attempt has failed', async () => {

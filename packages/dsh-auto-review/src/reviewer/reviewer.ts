@@ -2,7 +2,7 @@ import type { DshLlm, DshModelInfo } from '../dsh/runtime.js'
 import type { Preset, ReviewInput, ReviewOutcome } from '../presets/presets.js'
 import type { ReviewUsage } from './model-call.js'
 import { describeError } from '../util.js'
-import { abortFailure, createModelCall, permanentFailureOf } from './model-call.js'
+import { abortFailure, createModelCall, failureCategoryOf } from './model-call.js'
 
 export type ReviewResult = ReviewOutcome & { readonly usage: ReviewUsage }
 
@@ -31,7 +31,7 @@ export async function runReview(llm: DshLlm, request: ReviewRequest): Promise<Re
         usage,
         ...(signal.aborted
           ? abortFailure(timeoutController.signal, values.timeoutMs)
-          : { category: permanentFailureOf(error) ?? 'provider-error', detail: describeError(error) }),
+          : { category: failureCategoryOf(error) ?? 'provider-error', detail: describeError(error) }),
       }
     }
     const complete = createModelCall({

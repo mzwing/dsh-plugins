@@ -33,8 +33,18 @@ export type FailureCategory =
   | 'timeout'
   | 'cancelled'
 
-// A retry cannot change these; every other failure code is retried as a provider error
-const permanentFailures: ReadonlyMap<string, FailureCategory> = new Map([
+// The codes DSH's own retries resend by default (`DEFAULT_RETRYABLE_CODES` in `@deepseek-ai/dsh-llm`); any other
+// failure fails the same way again, and resending a refused request draws another refusal
+const transientFailures: ReadonlySet<string> = new Set([
+  'EMPTY_RESPONSE',
+  'RATE_LIMIT',
+  'SERVER',
+  'TIMEOUT',
+  'TRANSPORT',
+])
+
+// The failures that name their cause; any other is a provider error
+const failureCategories: ReadonlyMap<string, FailureCategory> = new Map([
   ['NO_ADAPTER', 'provider-unresolved'],
   ['UNKNOWN_MODEL', 'model-unresolved'],
   ['INVALID_CONFIG', 'config-invalid'],
@@ -76,7 +86,7 @@ type CallResult<T> =
   | { readonly ok: true; readonly value: T; readonly reply: ModelReply }
   | { readonly ok: false; readonly category: FailureCategory; readonly detail: string }
 
-/** A `parse` that throws marks the reply malformed, which is retried like a failed call */
+/** A `parse` that throws marks the reply malformed, which is retried like a transient failure */
 export type ModelCall = <T>(request: ModelRequest, parse: (text: string) => T) => Promise<CallResult<T>>
 
 export interface ModelCallOptions {
@@ -97,10 +107,10 @@ export function outputReserveTokens(model: DshModelInfo): number {
   return model.defaultMaxTokens ?? fallbackOutputReserveTokens
 }
 
-export function permanentFailureOf(error: unknown): FailureCategory | undefined {
+export function failureCategoryOf(error: unknown): FailureCategory | undefined {
   const code = isRecord(error) ? error['code'] : undefined
 
-  return typeof code === 'string' ? permanentFailures.get(code) : undefined
+  return typeof code === 'string' ? failureCategories.get(code) : undefined
 }
 
 /** Why an aborted review ended: its own timeout, or the call's cancellation */
@@ -239,9 +249,8 @@ export function createModelCall(options: ModelCallOptions): ModelCall {
         }
         if (finish.kind === 'error' || finish.kind === 'aborted') {
           const detail = `${finish.failure.code}: ${finish.failure.message}`
-          const permanent = permanentFailures.get(finish.failure.code)
-          if (permanent !== undefined) {
-            return { ok: false, category: permanent, detail }
+          if (finish.kind === 'error' && !transientFailures.has(finish.failure.code)) {
+            return { ok: false, category: failureCategories.get(finish.failure.code) ?? 'provider-error', detail }
           }
           throw new Error(detail)
         }
