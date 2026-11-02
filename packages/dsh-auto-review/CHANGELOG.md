@@ -1,5 +1,19 @@
 # @mzwing/dsh-auto-review
 
+## 0.1.3
+
+### Patch Changes
+
+- [`03b9d93`](https://github.com/mzwing/dsh-plugins/commit/03b9d93d6759a16fded29f7e68f2328c6cafdeec) Thanks [@mzwing](https://github.com/mzwing)! - fix(dsh-auto-review): never resend a request the provider refused
+  
+  A review retried every failure outside a short list DSH names as permanent. A request Claude refused, which the pi-ai adapter reports under its catch-all `PI_AI_ERROR`, therefore went out again up to `maxRetries` times, each time drawing another refusal on the account. A failed call is now retried only for the codes DSH's own retries resend by default: `EMPTY_RESPONSE`, `RATE_LIMIT`, `SERVER`, `TIMEOUT` and `TRANSPORT`. A refusal, or any other failure a retry cannot change, falls to you at once.
+
+- [`ae68470`](https://github.com/mzwing/dsh-plugins/commit/ae68470ce3eed4867ceca62979b370f17217fe50) Thanks [@mzwing](https://github.com/mzwing)! - fix(dsh-auto-review): stop Claude from refusing the `claude-code` second pass
+  
+  The second pass asked the reviewer to write its reasoning in `<thinking>` tags in its reply. Claude Sonnet 5.5 and other recent Claude models refuse that as reasoning extraction before answering, so no call the fast pass flagged got a verdict, and each fell to you once the review failed.
+  
+  The second pass now reasons natively, at `reasoningEffort` when it is set and at the model's default otherwise, where it used the least effort before. The policy revision becomes `claude-code/2.1.314+dsh2`.
+
 ## 0.1.2
 
 ### Patch Changes
