@@ -10,8 +10,7 @@ import { assistantMessage, messageText, reviewRequest, scriptedLlm, toolCall, us
 const allow = '<block>no</block>'
 const block = '<block>yes</block>'
 const deny =
-  '<thinking>The push rewrites main.</thinking><block>yes</block><category>Git Destructive</category><reason>[Git Destructive] Force-pushing main destroys shared history.</reason>'
-const clear = '<thinking>The user named this exact push.</thinking><block>no</block>'
+  '<block>yes</block><category>Git Destructive</category><reason>[Git Destructive] Force-pushing main destroys shared history.</reason>'
 
 const pushEvents = [
   userMessage('agent-instructions', 'Never push to main.'),
@@ -80,8 +79,17 @@ describe('claude-code preset', () => {
     )
   })
 
+  it("leaves the second pass's reasoning to the model's default effort and out of its reply", async () => {
+    const harness = createHarness({ replies: [block, deny] })
+    await harness.review()
+    const [, second] = harness.requests()
+
+    expect(second).not.toHaveProperty('reasoningEffort')
+    expect(messageText(second?.messages[2])).not.toContain('<thinking>')
+  })
+
   it('escalates a fast reply that opens without a verdict, without retrying it, and lets the second pass clear it', async () => {
-    const harness = createHarness({ replies: ['Looking at the push first.', clear] })
+    const harness = createHarness({ replies: ['Looking at the push first.', allow] })
 
     expect(await harness.review()).toMatchObject({
       kind: 'allow',

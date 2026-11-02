@@ -4,7 +4,7 @@
 export const upstreamVersion = '2.1.314'
 
 /** Bumped when the adapted text changes without the upstream version moving */
-export const dshAdaptationRevision = 1
+export const dshAdaptationRevision = 2
 
 /** The rule labels `claude auto-mode defaults` printed at that release, never their text */
 export const upstreamLabels: Record<'environment' | 'allow' | 'soft_deny' | 'hard_deny', string[]> = {

@@ -24,8 +24,6 @@ export const claudeCodePreset: Preset = {
   async review(input, complete) {
     const { values, route, model, session, events, exec, cwd } = input
     const system = buildSystemPrompt(values.autoMode)
-    // The fast pass asks for no reasoning, and so does the second unless an effort is configured, as it reasons in
-    // `<thinking>` text instead; DSH's adapters list `off` first wherever they list efforts
     const leastEffort = model.reasoning?.efforts[0]?.id
     const decoded = decodeSession(session, events)
     const prepared = prepareReview(input, { system, reasoningEffort: leastEffort, maxTokens: fastMaxTokens }, after => {
@@ -61,7 +59,8 @@ export const claudeCodePreset: Preset = {
       system,
       messages: [...fastRequest.messages, fast.reply.message, userMessage(thinkingPrompt)],
       tokens: fastRequest.tokens + approximateTokens(fast.reply.text + thinkingPrompt),
-      reasoningEffort: route.reasoningEffort ?? leastEffort,
+      // Reasons natively, as Claude refuses a request to write its reasoning out (`reasoning_extraction`)
+      reasoningEffort: route.reasoningEffort,
     }
     const escalated = { ...fields, stage: 'thinking', fastVerdict: fast.value }
     const thinking = await complete(thinkingRequest, parseVerdict)

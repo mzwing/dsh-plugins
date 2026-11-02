@@ -32,17 +32,17 @@ Set the reviewer in `~/.dsh/cordis.patch.yml` or the profile's own `cordis.patch
 
 ## Configuration
 
-| Key                 | Default                                          | Description                                                                          |
-| ------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `preset`            | `codex`                                          | `codex` or `claude-code`                                                             |
-| `provider`, `model` | the session's model                              | Reviewer route, set together                                                         |
-| `reasoningEffort`   | the model's default, the least for `claude-code` | Reasoning effort for the configured route, used by `claude-code` for its second pass |
-| `timeoutMs`         | `90000`                                          | Total budget for one review, retries included                                        |
-| `attemptTimeoutMs`  | —                                                | Time limit for one call; without it, only `timeoutMs` applies                        |
-| `maxRetries`        | `2`                                              | Retries when a call fails or its reply is malformed                                  |
-| `followUpReviews`   | `auto`                                           | Continue the reviewer's conversation across calls; see below                         |
-| `autoMode`          | —                                                | Rules beside or instead of the preset's own; see below                               |
-| `exemptTools`       | read-only tools                                  | Tools that run unreviewed; a list replaces `defaultExemptTools` whole                |
+| Key                 | Default             | Description                                                                          |
+| ------------------- | ------------------- | ------------------------------------------------------------------------------------ |
+| `preset`            | `codex`             | `codex` or `claude-code`                                                             |
+| `provider`, `model` | the session's model | Reviewer route, set together                                                         |
+| `reasoningEffort`   | the model's default | Reasoning effort for the configured route, used by `claude-code` for its second pass |
+| `timeoutMs`         | `90000`             | Total budget for one review, retries included                                        |
+| `attemptTimeoutMs`  | —                   | Time limit for one call; without it, only `timeoutMs` applies                        |
+| `maxRetries`        | `2`                 | Retries when a call fails or its reply is malformed                                  |
+| `followUpReviews`   | `auto`              | Continue the reviewer's conversation across calls; see below                         |
+| `autoMode`          | —                   | Rules beside or instead of the preset's own; see below                               |
+| `exemptTools`       | read-only tools     | Tools that run unreviewed; a list replaces `defaultExemptTools` whole                |
 
 `autoMode` takes the same four lists as Claude Code's own `autoMode` settings, so rules copied from there paste in. `environment` tells the reviewer what lies inside your trust boundary, `hard_deny` rules always block, and `soft_deny` rules block unless an `allow` exception or the user's explicit consent clears them. Each is a list of prose rules: the entry `$defaults` stands for the preset's built-in rules, and a list without it replaces them. Under `codex`, `$defaults` keeps the Guardian policy's sections where they are, and your other rules join it as operator policy.
 
