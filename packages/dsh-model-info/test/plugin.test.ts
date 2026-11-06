@@ -24,7 +24,7 @@ const llmPiAiConfig = {
   },
 }
 
-type ConfigHook = (this: DshFiber, config: unknown, next: () => unknown) => unknown
+type ConfigHook = (fiber: DshFiber, next: () => unknown) => unknown
 
 /** A loader entry whose volatile commit runs the `internal/config` waterfall the way Cordis does. */
 function createEntry(hooks: ConfigHook[], name: string, config: unknown) {
@@ -38,7 +38,7 @@ function createEntry(hooks: ConfigHook[], name: string, config: unknown) {
       const next = (): unknown => {
         const hook = chain.shift()
 
-        return hook === undefined ? config : hook.call(fiber, config, next)
+        return hook === undefined ? config : Reflect.apply(hook, null, [fiber, next])
       }
       entry.committed = next()
 

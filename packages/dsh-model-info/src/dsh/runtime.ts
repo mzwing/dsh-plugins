@@ -42,8 +42,7 @@ export interface DshContext {
   /** `undefined` while the service is not running. */
   readonly get: (name: 'llm') => DshLlm | undefined
   readonly on: {
-    /** Every fiber's config resolution runs through this waterfall, with the fiber as `this`. */
-    (name: 'internal/config', listener: (this: DshFiber, config: unknown, next: () => unknown) => unknown): () => void
+    (name: 'internal/config', listener: (fiber: DshFiber, next: () => unknown) => unknown): () => void
     /** Fires whenever an llm adapter registers or changes its routes. */
     (name: 'llm/adapters-updated', listener: () => void): () => void
   }

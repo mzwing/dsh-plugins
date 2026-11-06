@@ -1,7 +1,7 @@
 import type { CatalogSnapshot } from './catalog/store.js'
 import type { ProviderReport } from './completion/completion.js'
 import type { LoadedConfig } from './config.js'
-import type { DshContext, DshFiber, DshLoaderEntry } from './dsh/runtime.js'
+import type { DshContext, DshLoaderEntry } from './dsh/runtime.js'
 import type { ListingRequest } from './listing/store.js'
 import { CatalogStore } from './catalog/store.js'
 import { completeConfig } from './completion/completion.js'
@@ -118,9 +118,9 @@ export function apply(ctx: DshContext, { config, issues }: LoadedConfig): void {
 
   // Registered before the hook, so it runs once the hook is gone and llm-pi-ai falls back to its own values.
   ctx.effect(() => recommitLlmPiAi)
-  ctx.on('internal/config', function (this: DshFiber, _raw: unknown, next: () => unknown) {
+  ctx.on('internal/config', (fiber, next) => {
     const raw = next()
-    if (this.runtime?.name !== llmPiAiName) {
+    if (fiber.runtime?.name !== llmPiAiName) {
       return raw
     }
     const expanded = expand(raw)
