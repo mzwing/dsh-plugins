@@ -1,5 +1,13 @@
 # @mzwing/dsh-model-info
 
+## 0.2.1
+
+### Patch Changes
+
+- [`96244d7`](https://github.com/mzwing/dsh-plugins/commit/96244d79c53d1a78689ba78e82516223d5e92493) Thanks [@mzwing](https://github.com/mzwing)! - fix(dsh-model-info): fix startup failure during config resolution
+  
+  DSH startup failed with "Cannot read properties of null (reading 'runtime')" because Cordis calls the `internal/config` hook with a null receiver and the fiber as its first argument.
+
 ## 0.2.0
 
 ### Minor Changes
