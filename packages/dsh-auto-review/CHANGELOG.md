@@ -1,5 +1,27 @@
 # @mzwing/dsh-auto-review
 
+## 0.1.4
+
+### Patch Changes
+
+- [`1125ed9`](https://github.com/mzwing/dsh-plugins/commit/1125ed9012741274a1ccb22e3292e4d61c5ace1a) Thanks [@mzwing](https://github.com/mzwing)! - chore: adapt DSH 0.2.2
+  
+  dsh-auto-review now moves live Auto sessions to Workspace Write only when the plugin itself is removed. When DSH shuts down, it leaves their saved Auto setting alone, as the built-in Auto review does since 0.2.2, so they resume in Auto on the next start. Reviewer requests also carry the `auto-review` request purpose, so plugins that set pi-ai request headers by purpose can tell them apart from the main conversation.
+  
+  dsh-model-info now requires DSH 0.2.2-alpha.3 or later, the first release with the `internal/config` hook signature it relies on.
+  
+  Each package now includes its `CHANGELOG.md` in the published npm package.
+
+- [`1125ed9`](https://github.com/mzwing/dsh-plugins/commit/1125ed9012741274a1ccb22e3292e4d61c5ace1a) Thanks [@mzwing](https://github.com/mzwing)! - chore(dsh-auto-review): reconcile the bundled Guardian policy against openai/codex@e54a5713
+  
+  Upstream simplified the Guardian outcome policy's post-denial approval rule (openai/codex#60391): re-approving a previously denied action after seeing the concrete risk sets user authorization to `high`, and the rule no longer repeats that the approval must be explicit, cover the exact action, and come from the user beyond doubt, since the authorization scoring rules still require those. The `codex` preset's adapted prompt simplifies its post-denial rule the same way while still keeping re-approval from lifting a denial for a critical action or an absolute (`hard_deny`) rule, and the policy revision shown in the review log and the `/auto-review` status becomes `openai-codex/e54a5713caf331f42a6eef0166186df5f7563c29+dsh2`.
+
+- [`7720bba`](https://github.com/mzwing/dsh-plugins/commit/7720bbaf157a31a89570558e8dc2de8e5f9f82e3) Thanks [@mzwing](https://github.com/mzwing)! - fix(dsh-auto-review): attribute delegated prompts the way the built-in Auto review does since DSH 0.2.2
+  
+  A forked child inherits its parent's log, so the task an earlier child was created with could reach the reviewer as the user's own words and vouch for the child's actions. Every creation prompt in the log, inherited ones included, is now shown as unverified context. A child whose own creation prompt cannot be found shows its own user-role prompts the same way, so the reviewer no longer gives them the user's authority. Prompts the Web client submitted still count as the user's.
+  
+  A delegated child's call that fails because its review could not decide now carries the `AutoReviewFailedError` / `AUTO_REVIEW_FAILED` identity, the same one the built-in Auto review uses, so it no longer looks like a plain failed call.
+
 ## 0.1.3
 
 ### Patch Changes
