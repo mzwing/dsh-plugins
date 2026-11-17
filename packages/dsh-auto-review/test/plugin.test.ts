@@ -10,6 +10,7 @@ import type {
 } from '../src/dsh/runtime.js'
 import type { ScriptedReply } from './helpers.js'
 import { describe, expect, it, vi } from 'vitest'
+import { fiberActive } from '../src/dsh/runtime.js'
 import { apply } from '../src/index.js'
 import { execution, fakeSession, liveConfig, scriptedLlm } from './helpers.js'
 
@@ -25,8 +26,10 @@ function setup(options: { replies?: ScriptedReply[]; values?: Partial<ConfigValu
   const disposers: DshDisposer[] = []
   const commands = new Map<string, DshCommandDefinition>()
   let admit: (() => void) | undefined
+  const root = { fiber: { state: fiberActive } }
   const ctx: DshContext = {
     logger: { info: vi.fn(), warn: vi.fn() },
+    root,
     llm: scripted.llm,
     approval: { overrideOf: () => 'ask' },
     permissionPresets: {
@@ -72,6 +75,7 @@ function setup(options: { replies?: ScriptedReply[]; values?: Partial<ConfigValu
     presets,
     listeners,
     commands,
+    root,
     admit: (): void => admit?.(),
     /** Runs the registered gate with nothing after it in the pipeline */
     async review(exec: DshToolExecution): Promise<DshPreToolDecision> {
@@ -111,6 +115,15 @@ describe('auto reviewer plugin', () => {
       'read-only',
       'workspace-write',
     ])
+  })
+
+  it('keeps saved Auto sessions as they are when DSH itself shuts down', async () => {
+    const plugin = setup()
+    // Cordis `FiberState.UNLOADING`
+    plugin.root.fiber.state = 5
+    await plugin.dispose()
+
+    expect(plugin.sessions.map(session => plugin.presets.get(session))).toEqual(['auto', 'read-only', 'auto'])
   })
 
   it('reviews on an edited route from the next call on, without remounting', async () => {

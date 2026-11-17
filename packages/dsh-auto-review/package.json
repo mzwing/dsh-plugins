@@ -33,6 +33,7 @@
     "cordis.patch.yml",
     "config/config.example.yml",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "type": "module",

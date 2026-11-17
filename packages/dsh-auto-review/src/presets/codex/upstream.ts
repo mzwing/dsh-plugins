@@ -6,7 +6,7 @@ export const upstreamDirectory = 'codex-rs/prompts/templates/guardian'
 export const upstreamFiles = ['policy_template.md', 'policy.md'] as const
 
 /** The newest upstream commit touching `upstreamFiles` that the adapted text has been reconciled against */
-export const upstreamRevision = '26cb4d73e2ce25575644038d7af5beb2440d0ed0'
+export const upstreamRevision = 'e54a5713caf331f42a6eef0166186df5f7563c29'
 
 /** Bumped when the adapted text changes without the upstream revision moving */
 export const dshAdaptationRevision = 2

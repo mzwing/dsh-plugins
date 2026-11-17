@@ -52,7 +52,11 @@ describe('reviewer', () => {
     await fallback.review()
     const [options] = configured.requests()
     // Reasoning is not starved by an output cap, and the review keeps a key apart from the main conversation's
-    expect(options).toMatchObject({ reasoningEffort: 'low', sessionId: 'auto-review:session-1' })
+    expect(options).toMatchObject({
+      reasoningEffort: 'low',
+      sessionId: 'auto-review:session-1',
+      purpose: 'auto-review',
+    })
     expect(options?.system).toMatch(/^You are the final authorization reviewer/)
     expect(options).not.toHaveProperty('maxTokens')
     expect(options).not.toHaveProperty('temperature')

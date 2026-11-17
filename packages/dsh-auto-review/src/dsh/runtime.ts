@@ -5,6 +5,9 @@ export const autoPreset = 'auto'
 /** Where live Auto sessions go on unload, since a session stored as `auto` cannot be restored without this plugin */
 export const fallbackPreset = 'workspace-write'
 
+/** Cordis `FiberState.ACTIVE`, a const enum member DSH does not export at runtime */
+export const fiberActive = 2
+
 export const runCodeName = 'run_code'
 
 export type DshContentBlock =
@@ -185,6 +188,7 @@ export interface DshGenerateOptions {
   readonly messages: readonly DshRequestMessage[]
   readonly signal: AbortSignal
   readonly sessionId: string
+  readonly purpose: 'auto-review'
 }
 
 export interface DshModelInfo {
@@ -238,6 +242,7 @@ interface DshLogger {
 
 export interface DshContext {
   readonly logger: DshLogger
+  readonly root: { readonly fiber: { readonly state: number } }
   readonly llm: DshLlm
   readonly approval: DshApproval
   readonly permissionPresets: DshPermissionPresets

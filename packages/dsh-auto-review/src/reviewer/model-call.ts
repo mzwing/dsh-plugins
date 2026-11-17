@@ -239,6 +239,7 @@ export function createModelCall(options: ModelCallOptions): ModelCall {
           messages: request.messages,
           signal: attemptSignal,
           sessionId: `${sessionKeyPrefix}${options.sessionId}`,
+          purpose: 'auto-review',
         })
         const { reply, finish } = await raceWithSignal(readReply(stream, route), attemptSignal)
         usage.inputTokens += reply.usage?.inputTokens ?? 0

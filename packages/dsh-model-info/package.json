@@ -31,6 +31,7 @@
     "cordis.patch.yml",
     "config/config.example.yml",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "type": "module",
@@ -64,7 +65,7 @@
     "vitest": "catalog:"
   },
   "engines": {
-    "dsh": ">=0.2.1-rc.4",
+    "dsh": ">=0.2.2-alpha.3",
     "node": ">=24"
   },
   "dsh": {

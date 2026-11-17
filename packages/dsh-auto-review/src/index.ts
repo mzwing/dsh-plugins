@@ -2,7 +2,7 @@ import type { ConfigRefs } from './config.js'
 import type { DshContext } from './dsh/runtime.js'
 import { configIssue, readConfig, reviewerRoute } from './config.js'
 import { commandName, commandUsage, defaultsArgument, formatDefaults, formatStatus } from './dsh/command.js'
-import { autoPreset, fallbackPreset } from './dsh/runtime.js'
+import { autoPreset, fallbackPreset, fiberActive } from './dsh/runtime.js'
 import { createGate } from './gate/gate.js'
 import { SessionReviews } from './gate/session-reviews.js'
 
@@ -27,9 +27,12 @@ export function apply(ctx: DshContext, config: ConfigRefs): void {
     yield async () => {
       const drained = gate.close()
       try {
-        for (const session of ctx.sessions.list()) {
-          if (ctx.permissionPresets.current(session) === autoPreset) {
-            ctx.permissionPresets.set(session, fallbackPreset)
+        // Root unload begins before child cleanup, so only a live plugin removal changes the saved session policy
+        if (ctx.root.fiber.state === fiberActive) {
+          for (const session of ctx.sessions.list()) {
+            if (ctx.permissionPresets.current(session) === autoPreset) {
+              ctx.permissionPresets.set(session, fallbackPreset)
+            }
           }
         }
       } finally {
