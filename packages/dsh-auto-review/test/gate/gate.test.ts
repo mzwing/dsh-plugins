@@ -157,6 +157,7 @@ describe('gate', () => {
     expect(shownText(asked)).toContain('could not decide this call (invalid-response)')
     expect(denied.kind).toBe('deny')
     expect(shownText(denied)).toContain('failed (invalid-response); its body was not executed')
+    expect(denied).toMatchObject({ info: { name: 'AutoReviewFailedError', code: 'AUTO_REVIEW_FAILED' } })
   })
 
   it('asks without calling the reviewer while the config is invalid', async () => {

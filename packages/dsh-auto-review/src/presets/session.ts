@@ -60,6 +60,8 @@ const planApprovalAnswers: readonly QuestionAnswer[] = [
   { question: 'Approve this plan and leave plan mode?', selected: ['Approve'] },
 ]
 const abortedCodes: ReadonlySet<string> = new Set(['ABORTED', 'ABORTED_BEFORE_DISPATCH'])
+/** The `context` source of a user-role prompt not proven to be the human's, such as another child's creation prompt */
+const unverifiedPromptSource = 'unverified-prompt'
 
 function textOf(content: readonly DshContentBlock[]): string {
   const parts: string[] = []
@@ -161,24 +163,51 @@ function answersInReply(content: readonly DshContentBlock[]): readonly QuestionA
   return questions === undefined ? undefined : canonicalAnswers(payload['answers'], questions)
 }
 
-/** An in-process child's first own prompt after its descriptor is the task its parent delegated */
-function creationPromptSeq(session: DshSession, events: readonly DshSessionEvent[]): number | undefined {
-  if (session.header.origin !== 'subagent') {
-    return undefined
-  }
+interface CreationPrompts {
+  /** The task this child's direct parent delegated */
+  readonly own: number | undefined
+  /** Every creation prompt in the log, those of the agents a fork inherited history from included */
+  readonly all: ReadonlySet<number>
+}
+
+/** A creation prompt is the first user-role prompt after a descriptor that the Web client did not submit */
+function creationPrompts(session: DshSession, events: readonly DshSessionEvent[]): CreationPrompts {
+  const isChild = session.header.origin === 'subagent' && session.header.parentSession !== undefined
+  const all = new Set<number>()
   let passedDescriptor = false
   for (const event of events) {
-    if (!session.isOwnSeq(event.seq)) {
-      continue
-    }
     if (event.type === 'subagent/descriptor') {
       passedDescriptor = true
-    } else if (passedDescriptor && event.type === 'user/message' && event.data.source.kind === 'user') {
-      return event.seq
+    } else if (
+      passedDescriptor &&
+      event.type === 'user/message' &&
+      event.data.source.kind === 'user' &&
+      event.data.source.rpcId === undefined
+    ) {
+      all.add(event.seq)
+      if (isChild && session.isOwnSeq(event.seq)) {
+        return { own: event.seq, all }
+      }
+      passedDescriptor = false
     }
   }
 
-  return undefined
+  return { own: undefined, all }
+}
+
+/** Without its own creation prompt found, a child cannot tell its parent's task from the human's words */
+function isUnverifiedPrompt(session: DshSession, prompts: CreationPrompts, seq: number, rpcId?: string): boolean {
+  if (prompts.all.has(seq)) {
+    return true
+  }
+
+  return (
+    prompts.own === undefined &&
+    session.header.origin === 'subagent' &&
+    session.header.parentSession !== undefined &&
+    session.isOwnSeq(seq) &&
+    rpcId === undefined
+  )
 }
 
 /**
@@ -187,7 +216,7 @@ function creationPromptSeq(session: DshSession, events: readonly DshSessionEvent
  * project instructions, which `instructionsOf` reads from the surface
  */
 export function decodeSession(session: DshSession, events: readonly DshSessionEvent[]): SessionEvent[] {
-  const delegatedTaskSeq = creationPromptSeq(session, events)
+  const prompts = creationPrompts(session, events)
   const parentSession = session.header.origin === 'subagent' ? session.header.parentSession : undefined
   const callsById = new Map<string, ToolCall>()
   const decoded: SessionEvent[] = []
@@ -207,7 +236,13 @@ export function decodeSession(session: DshSession, events: readonly DshSessionEv
       } else if (event.surfaceOp !== 'append' || source.kind === 'agent-instructions') {
         continue
       } else if (source.kind === 'user') {
-        addText(seq === delegatedTaskSeq ? { kind: 'parent', seq, role: 'task', text } : { kind: 'user', seq, text })
+        if (seq === prompts.own) {
+          addText({ kind: 'parent', seq, role: 'task', text })
+        } else if (isUnverifiedPrompt(session, prompts, seq, source.rpcId)) {
+          addText({ kind: 'context', seq, source: unverifiedPromptSource, text })
+        } else {
+          addText({ kind: 'user', seq, text })
+        }
       } else if (
         source.kind === 'agent-message' &&
         parentSession !== undefined &&

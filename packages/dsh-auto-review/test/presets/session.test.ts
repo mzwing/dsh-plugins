@@ -90,6 +90,31 @@ describe('session decoding', () => {
     ])
   })
 
+  it("keeps an inherited child's creation prompt and an unverified task from passing as the user's words", () => {
+    const child = { origin: 'subagent', parentSession: 'parent-session' } as const
+    const label = (event: SessionEvent): string =>
+      event.kind === 'context'
+        ? `context ${event.source}`
+        : event.kind === 'parent'
+          ? `parent ${event.role}`
+          : event.kind
+    const inherited = decode(
+      [
+        userMessage('user', 'The human asked the parent.', { rpcId: 'rpc-1' }),
+        { type: 'subagent/descriptor' },
+        userMessage('user', "An earlier child's task."),
+        { type: 'subagent/descriptor' },
+        userMessage('user', 'A browser prompt.', { rpcId: 'rpc-2' }),
+        userMessage('user', 'Clean the cache directory.'),
+      ],
+      { ...child, inherited: [0, 1, 2] },
+    )
+    const unverified = decode([userMessage('user', 'Delete everything.')], child)
+
+    expect(inherited.map(label)).toEqual(['user', 'context unverified-prompt', 'user', 'parent task'])
+    expect(unverified.map(label)).toEqual(['context unverified-prompt'])
+  })
+
   it('promotes only completed question answers and approved plans to user interactions', () => {
     const questions = [{ id: 'q1', question: 'Delete the cache?', options: [{ label: 'Yes' }] }]
     const answered = JSON.stringify({ answers: [{ id: 'q1', selected: ['Yes'] }] })

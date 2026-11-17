@@ -6,6 +6,7 @@ type Denial = Extract<ReviewOutcome, { kind: 'deny' }>
 
 // The Web tool card renders "Rejected by Auto review" for exactly this error identity
 const deniedError = { name: 'AutoReviewDeniedError', code: 'AUTO_REVIEW_DENIED' }
+const failedError = { name: 'AutoReviewFailedError', code: 'AUTO_REVIEW_FAILED' }
 
 export function denialByReview(tool: string, denial: Denial): DshPreToolDecision {
   return {
@@ -30,6 +31,7 @@ export function denialAfterFailure(tool: string, category: FailureCategory, deta
   return {
     kind: 'deny',
     reason: `Auto review of tool "${tool}" failed (${category}); its body was not executed: ${detail}`,
+    info: failedError,
   }
 }
 

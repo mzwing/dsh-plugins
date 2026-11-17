@@ -21,6 +21,8 @@ export type DshContentBlock =
 interface DshMessageSource {
   readonly kind: string
   readonly senderSessionId?: string
+  /** Set on a prompt the Web client submitted, never on a child's creation prompt */
+  readonly rpcId?: string
 }
 
 /** A replacement summarizes or repeats earlier surface nodes, as compaction and the tool-result pruner do */

@@ -29,7 +29,11 @@ export function replacement(event: EventSpec): EventSpec {
   return { ...event, surfaceOp: { op: 'replace' } } as EventSpec
 }
 
-export function userMessage(kind: string, text: string, extra: { senderSessionId?: string } = {}): EventSpec {
+export function userMessage(
+  kind: string,
+  text: string,
+  extra: { senderSessionId?: string; rpcId?: string } = {},
+): EventSpec {
   return {
     type: 'user/message',
     surfaceOp: 'append',
